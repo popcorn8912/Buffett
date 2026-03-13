@@ -1,0 +1,113 @@
+<main class="page-shell">
+  <section class="hero-card">
+    <div class="hero-copy">
+      <p class="eyebrow">Buffett Market View</p>
+      <h1>Simple stock charting for your backend API.</h1>
+      <p class="hero-text">
+        This first frontend scaffold loads basic stock info from Spring Boot and renders a clean price line chart.
+      </p>
+    </div>
+
+    <form class="ticker-form" (ngSubmit)="refresh()" #tickerForm="ngForm">
+      <label for="ticker">Ticker</label>
+      <div class="ticker-row">
+        <input
+          id="ticker"
+          name="ticker"
+          type="text"
+          maxlength="10"
+          [(ngModel)]="ticker"
+          placeholder="NVDA"
+          autocomplete="off"
+        />
+        <button type="submit" [disabled]="loading() || !tickerForm.form.valid">
+          {{ loading() ? 'Loading...' : 'Load' }}
+        </button>
+      </div>
+      <p class="hint">Try `AAPL`, `NVDA`, `TSLA`, or any custom symbol.</p>
+    </form>
+  </section>
+
+  @if (error()) {
+    <section class="status-card error-card">
+      <p>{{ error() }}</p>
+    </section>
+  }
+
+  @if (stock(); as currentStock) {
+    <section class="dashboard-grid">
+      <article class="summary-card">
+        <div class="summary-header">
+          <div>
+            <p class="ticker-label">{{ currentStock.ticker }}</p>
+            <h2>{{ currentStock.companyName }}</h2>
+            <p class="exchange-line">{{ currentStock.exchange }} · {{ currentStock.currency }}</p>
+          </div>
+          <div class="price-block">
+            <p class="current-price">{{ currentStock.currentPrice | number: '1.2-2' }}</p>
+            <p class="price-change" [class.negative]="currentStock.changeAmount < 0">
+              {{ currentStock.changeAmount >= 0 ? '+' : '' }}{{ currentStock.changeAmount | number: '1.2-2' }}
+              ({{ currentStock.changePercent >= 0 ? '+' : '' }}{{ currentStock.changePercent | number: '1.2-2' }}%)
+            </p>
+          </div>
+        </div>
+
+        <div class="metric-grid">
+          <div class="metric-card">
+            <span>Latest close</span>
+            <strong>{{ lastClose() | number: '1.2-2' }}</strong>
+          </div>
+          <div class="metric-card">
+            <span>Period low</span>
+            <strong>{{ minClose() | number: '1.2-2' }}</strong>
+          </div>
+          <div class="metric-card">
+            <span>Period high</span>
+            <strong>{{ maxClose() | number: '1.2-2' }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="chart-card">
+        <div class="chart-copy">
+          <p class="chart-label">Price line</p>
+          <h3>Closing trend</h3>
+        </div>
+
+        <div class="chart-frame">
+          <svg viewBox="0 0 760 320" class="chart-svg" preserveAspectRatio="none" aria-label="Stock price line chart">
+            <defs>
+              <linearGradient id="line-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="rgba(234, 179, 8, 0.35)"></stop>
+                <stop offset="100%" stop-color="rgba(234, 179, 8, 0.02)"></stop>
+              </linearGradient>
+            </defs>
+
+            @for (gridLine of gridLines(); track gridLine) {
+              <line
+                x1="0"
+                [attr.y1]="gridLine"
+                x2="760"
+                [attr.y2]="gridLine"
+                class="grid-line"
+              ></line>
+            }
+
+            <polygon [attr.points]="areaPoints()" class="area-fill"></polygon>
+            <polyline [attr.points]="linePoints()" class="price-line"></polyline>
+
+            @for (point of chartPoints(); track point.date) {
+              <circle [attr.cx]="point.x" [attr.cy]="point.y" r="4.5" class="price-dot"></circle>
+            }
+          </svg>
+        </div>
+
+        <div class="axis-labels">
+          @for (point of currentStock.prices; track point.date) {
+            <span>{{ point.date.slice(5) }}</span>
+          }
+        </div>
+      </article>
+    </section>
+  }
+</main>
